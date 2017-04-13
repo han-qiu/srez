@@ -61,6 +61,9 @@ tf.app.flags.DEFINE_integer('test_vectors', 16,
 tf.app.flags.DEFINE_string('train_dir', 'train',
                            "Output folder where training logs are dumped.")
 
+tf.app.flags.DEFINE_string('test_dataset', 'test',
+                            "testing dataset. Warning:file will be overided")
+
 tf.app.flags.DEFINE_integer('train_time', 60,
                             "Time in minutes to train the model")
 
@@ -133,6 +136,36 @@ def _demo():
     # Execute demo
     srez_demo.demo1(sess)
 
+def _test():
+    # Load checkpoint
+    if not tf.gfile.IsDirectory(FLAGS.checkpoint_dir):
+        raise FileNotFoundError("Could not find folder `%s'" % (FLAGS.checkpoint_dir,))
+    if not tf.gile.IsDirectory(FLAGS.test_dataset):
+        raise FileNotFoundError("Could not find folder `%s'" % (FLAGS.test_dataset,))
+    # Setup global tensorflow state
+    sess = tf.Session()
+
+    # Prepare directories
+    filenames = prepare_dirs(delete_train_dir=False)
+
+    # Setup async input queues
+    features, labels = srez_input.setup_inputs(sess, filenames)
+
+    # Create and initialize model
+    [gene_minput, gene_moutput,
+     gene_output, gene_var_list,
+     disc_real_output, disc_fake_output, disc_var_list] = \
+            srez_model.create_model(sess, features, labels)
+
+    # Restore variables from checkpoint
+    saver = tf.train.Saver()
+    filename = 'checkpoint_new.txt'
+    filename = os.path.join(FLAGS.checkpoint_dir, filename)
+    saver.restore(sess, filename)
+    
+    
+
+
 class TrainData(object):
     def __init__(self, dictionary):
         self.__dict__.update(dictionary)
@@ -178,6 +211,8 @@ def _train():
     train_data = TrainData(locals())
     srez_train.train_model(train_data)
 
+
+
 def main(argv=None):
     # Training or showing off?
 
@@ -185,6 +220,8 @@ def main(argv=None):
         _demo()
     elif FLAGS.run == 'train':
         _train()
+    elif FLAGS.run == 'test':
+        _test()
 
 if __name__ == '__main__':
   tf.app.run()
