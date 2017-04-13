@@ -12,7 +12,7 @@ def setup_inputs(sess, filenames, image_size=None, capacity_factor=3):
     filename_queue = tf.train.string_input_producer(filenames)
     key, value = reader.read(filename_queue)
     channels = 3
-    image = tf.image.decode_jpeg(value, channels=channels, name="dataset_image")
+    image = tf.image.decode_image(value, channels=channels, name="dataset_image")
     image.set_shape([None, None, channels])
 
     # Crop and other random augmentations
